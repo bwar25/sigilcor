@@ -1,0 +1,8 @@
+# ENV
+.env
+
+# PYCACHE
+**/__pycache__*
+
+# .EGG-INFO
+*/Sigilcor.egg-info/
