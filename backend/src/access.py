@@ -1,4 +1,4 @@
-from database.connection import connect_to_db
+from db.src.auxiliary.connection import connect_to_db
 
 from typing import Generator, Dict
 

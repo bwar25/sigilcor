@@ -1,4 +1,4 @@
-from api.access import get_price_data
+from src.access import get_price_data
 
 from typing import Dict, List
 
