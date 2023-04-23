@@ -15,6 +15,7 @@ def create_price_data_table(db_connection: pyodbc.Connection) -> None:
             OpenPrice varchar(12),
             HighPrice varchar(12),
             LowPrice varchar(12),
-            ClosePrice varchar(12)
+            ClosePrice varchar(12),
+            Symbol varchar(6)
         );
     """)

@@ -17,7 +17,8 @@ def insert_price_data(db_connection: pyodbc.Connection, filepaths: List[str]) ->
             OpenPrice VARCHAR(12), 
             HighPrice VARCHAR(12), 
             LowPrice VARCHAR(12), 
-            ClosePrice VARCHAR(12)
+            ClosePrice VARCHAR(12),
+            Symbol VARCHAR(6)
         )
     """)
 
@@ -30,8 +31,8 @@ def insert_price_data(db_connection: pyodbc.Connection, filepaths: List[str]) ->
 
         cursor.execute("""
             INSERT INTO PriceData 
-            (Time, OpenPrice, HighPrice, LowPrice, ClosePrice) 
-            SELECT CONVERT(datetime2(0), Time, 5), OpenPrice, HighPrice, LowPrice, ClosePrice 
+            (Time, OpenPrice, HighPrice, LowPrice, ClosePrice, Symbol) 
+            SELECT CONVERT(datetime2(0), Time, 5), OpenPrice, HighPrice, LowPrice, ClosePrice, Symbol 
             FROM StagingPriceData
         """)
 
