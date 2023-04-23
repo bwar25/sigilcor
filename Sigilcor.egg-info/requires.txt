@@ -1,6 +1,0 @@
-fastapi>=0.65.1
-pandas>=2.0.0
-pyodbc>=4.0.32
-python-dotenv>=1.0.0
-
-[dev]
