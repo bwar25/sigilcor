@@ -28,6 +28,9 @@ frontend/dist
 frontend/dist-ssr
 frontend/*.local
 
+frontend/package-lock.json
+
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
