@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import App from './App';
 import ThemeProvider from './contexts/ThemeProvider';
 
-import './tailwind.css';
-
 
 ReactDOM.render(
   <React.StrictMode>
