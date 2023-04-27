@@ -13,7 +13,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ toggleTheme, theme }) => {
       }`}
       onClick={toggleTheme}
     >
-      <span className="ml-2">{theme === 'light' ? 'Change to Dark Theme' : 'Change to Light Theme'}</span>
+      <span className="ml-2">{theme === 'light' ? 'Dark Ambience' : 'Light Ambience'}</span>
     </button>
   );
 };

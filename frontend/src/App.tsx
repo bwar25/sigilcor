@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import ThemeToggle from './components/ThemeToggle';
 import ThemeProvider from './contexts/ThemeProvider';
+import Header from './components/Header';
+import Footer from './components/Footer';
+
 
 const App = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -17,7 +19,8 @@ const App = () => {
   return (
     <ThemeProvider>
       <div>
-        <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+        <Header theme={theme} toggleTheme={toggleTheme} />
+        <Footer theme={theme} />
       </div>
     </ThemeProvider>
   );
