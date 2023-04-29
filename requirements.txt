@@ -1,4 +1,5 @@
 fastapi
+dash
 pandas
 pyodbc
 python-dotenv
