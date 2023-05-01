@@ -254,3 +254,85 @@ def session_close(db_connection: pyodbc.Connection) -> None:
         )
         FROM PriceData pd;
     """)
+
+
+# ---------- Prior Day ---------- #
+def prior_day_high(db_connection: pyodbc.Connection) -> None:
+    """
+    Example Usage:
+    prior_day_high(db_connection)
+    """
+    cursor = db_connection.cursor()
+
+    cursor.execute("""
+        ALTER TABLE PriceData ADD PriorDayHigh VARCHAR(12)
+    """)
+
+    cursor.execute("""
+        UPDATE PriceData
+        SET PriorDayHigh = subquery.PriorDayHigh
+        FROM (
+            SELECT Symbol, Day, Month, Year, HighRTH,
+                   LAG(HighRTH) OVER (PARTITION BY Symbol ORDER BY Year, Month, Day) AS PriorDayHigh
+            FROM PriceData
+            GROUP BY Symbol, Day, Month, Year, HighRTH
+        ) AS subquery
+        WHERE PriceData.Symbol = subquery.Symbol
+        AND PriceData.Day = subquery.Day
+        AND PriceData.Month = subquery.Month
+        AND PriceData.Year = subquery.Year
+    """)
+
+
+def prior_day_low(db_connection: pyodbc.Connection) -> None:
+    """
+    Example Usage:
+    prior_day_low(db_connection)
+    """
+    cursor = db_connection.cursor()
+
+    cursor.execute("""
+        ALTER TABLE PriceData ADD PriorDayLow VARCHAR(12)
+    """)
+
+    cursor.execute("""
+        UPDATE PriceData
+        SET PriorDayLow = subquery.PriorDayLow
+        FROM (
+            SELECT Symbol, Day, Month, Year, LowRTH,
+                   LAG(LowRTH) OVER (PARTITION BY Symbol ORDER BY Year, Month, Day) AS PriorDayLow
+            FROM PriceData
+            GROUP BY Symbol, Day, Month, Year, LowRTH
+        ) AS subquery
+        WHERE PriceData.Symbol = subquery.Symbol
+        AND PriceData.Day = subquery.Day
+        AND PriceData.Month = subquery.Month
+        AND PriceData.Year = subquery.Year
+    """)
+
+
+def prior_day_close(db_connection: pyodbc.Connection) -> None:
+    """
+    Example Usage:
+    prior_day_close(db_connection)
+    """
+    cursor = db_connection.cursor()
+    cursor.execute("""
+        ALTER TABLE PriceData ADD PriorDayClose VARCHAR(12)
+    """)
+    cursor.execute("""
+        UPDATE PriceData
+        SET PriorDayClose = subquery.PriorDayClose
+        FROM (
+            SELECT Symbol, Day, Month, Year, ClosePrice,
+                   LAG(ClosePrice) OVER (PARTITION BY Symbol ORDER BY Year, Month, Day) AS PriorDayClose
+            FROM PriceData
+            WHERE SessionTime = '15:00:00'
+            GROUP BY Symbol, Day, Month, Year, ClosePrice
+        ) AS subquery
+        WHERE PriceData.Symbol = subquery.Symbol
+        AND PriceData.Day = subquery.Day
+        AND PriceData.Month = subquery.Month
+        AND PriceData.Year = subquery.Year
+    """)
+    db_connection.commit()
