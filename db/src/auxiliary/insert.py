@@ -14,10 +14,10 @@ def insert_price_data(db_connection: pyodbc.Connection, filepaths: List[str]) ->
     cursor.execute("""
         CREATE TABLE StagingPriceData (
             Time VARCHAR(50), 
-            OpenPrice VARCHAR(12), 
-            HighPrice VARCHAR(12), 
-            LowPrice VARCHAR(12), 
-            ClosePrice VARCHAR(12),
+            OpenPrice FLOAT, 
+            HighPrice FLOAT, 
+            LowPrice FLOAT, 
+            ClosePrice FLOAT,
             Symbol VARCHAR(6)
         )
     """)

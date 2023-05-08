@@ -27,26 +27,53 @@ def separate_time_columns(db_connection: pyodbc.Connection) -> None:
     """)
 
 
-# ---------- ETH Open ---------- #
-def open_eth(db_connection: pyodbc.Connection) -> None:
+# ---------- ETH Opening Range ---------- #
+def orh_eth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
-    open_eth(db_connection)
+    orh_eth(db_connection)
     """
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD OpenETH VARCHAR(12)
+        ALTER TABLE PriceData ADD ORHETH FLOAT
     """)
 
     cursor.execute("""
     UPDATE pd
-    SET pd.OpenETH = subq.OpenPrice
+    SET pd.ORHETH = subq.HighPrice
     FROM PriceData pd
     JOIN (
-        SELECT Day, Month, Year, Symbol, OpenPrice
+        SELECT Day, Month, Year, Symbol, HighPrice
         FROM PriceData
-        WHERE SessionTime = '07:01:00'
+        WHERE SessionTime = '02:00:00'
+    ) subq
+    ON pd.Day = subq.Day
+        AND pd.Month = subq.Month
+        AND pd.Year = subq.Year
+        AND pd.Symbol = subq.Symbol
+""")
+
+
+def orl_eth(db_connection: pyodbc.Connection) -> None:
+    """
+    Example Usage:
+    orl_eth(db_connection)
+    """
+    cursor = db_connection.cursor()
+
+    cursor.execute("""
+        ALTER TABLE PriceData ADD ORLETH FLOAT
+    """)
+
+    cursor.execute("""
+    UPDATE pd
+    SET pd.ORLETH = subq.LowPrice
+    FROM PriceData pd
+    JOIN (
+        SELECT Day, Month, Year, Symbol, LowPrice
+        FROM PriceData
+        WHERE SessionTime = '02:00:00'
     ) subq
     ON pd.Day = subq.Day
         AND pd.Month = subq.Month
@@ -55,24 +82,24 @@ def open_eth(db_connection: pyodbc.Connection) -> None:
 """)
     
 
-# ---------- RTH Open ---------- #
-def open_rth(db_connection: pyodbc.Connection) -> None:
+# ---------- RTH Opening Range ---------- #
+def orh_rth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
-    open_eth(db_connection)
+    orh_eth(db_connection)
     """
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD OpenRTH VARCHAR(12)
+        ALTER TABLE PriceData ADD ORHRTH FLOAT
     """)
 
     cursor.execute("""
     UPDATE pd
-    SET pd.OpenRTH = subq.OpenPrice
+    SET pd.ORHRTH = subq.HighPrice
     FROM PriceData pd
     JOIN (
-        SELECT Day, Month, Year, Symbol, OpenPrice
+        SELECT Day, Month, Year, Symbol, HighPrice
         FROM PriceData
         WHERE SessionTime = '08:30:00'
     ) subq
@@ -83,7 +110,34 @@ def open_rth(db_connection: pyodbc.Connection) -> None:
 """)
 
 
-# ---------- ETH High ---------- #
+def orl_rth(db_connection: pyodbc.Connection) -> None:
+    """
+    Example Usage:
+    orl_eth(db_connection)
+    """
+    cursor = db_connection.cursor()
+
+    cursor.execute("""
+        ALTER TABLE PriceData ADD ORLRTH FLOAT
+    """)
+
+    cursor.execute("""
+    UPDATE pd
+    SET pd.ORLRTH = subq.LowPrice
+    FROM PriceData pd
+    JOIN (
+        SELECT Day, Month, Year, Symbol, LowPrice
+        FROM PriceData
+        WHERE SessionTime = '08:30:00'
+    ) subq
+    ON pd.Day = subq.Day
+        AND pd.Month = subq.Month
+        AND pd.Year = subq.Year
+        AND pd.Symbol = subq.Symbol
+""")
+
+
+# ---------- ETH High/Low ---------- #
 def high_eth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
@@ -92,7 +146,7 @@ def high_eth(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD HighETH VARCHAR(12)
+        ALTER TABLE PriceData ADD HighETH FLOAT
     """)
 
     cursor.execute("""
@@ -102,7 +156,7 @@ def high_eth(db_connection: pyodbc.Connection) -> None:
     JOIN (
         SELECT Day, Month, Year, Symbol, MAX(HighPrice) AS HighPrice
         FROM PriceData
-        WHERE SessionTime >= '07:01:00' AND SessionTime <= '08:30:00'
+        WHERE SessionTime >= '02:00:00' AND SessionTime <= '08:30:00'
         GROUP BY Day, Month, Year, Symbol
     ) subq
     ON pd.Day = subq.Day
@@ -112,7 +166,6 @@ def high_eth(db_connection: pyodbc.Connection) -> None:
     """)
 
 
-# ---------- ETH Low ---------- #
 def low_eth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
@@ -121,7 +174,7 @@ def low_eth(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD LowETH VARCHAR(12)
+        ALTER TABLE PriceData ADD LowETH FLOAT
     """)
 
     cursor.execute("""
@@ -131,7 +184,7 @@ def low_eth(db_connection: pyodbc.Connection) -> None:
     JOIN (
         SELECT Day, Month, Year, Symbol, MIN(LowPrice) AS LowPrice
         FROM PriceData
-        WHERE SessionTime >= '07:01:00' AND SessionTime <= '08:30:00'
+        WHERE SessionTime >= '02:00:00' AND SessionTime <= '08:30:00'
         GROUP BY Day, Month, Year, Symbol
     ) subq
     ON pd.Day = subq.Day
@@ -141,7 +194,7 @@ def low_eth(db_connection: pyodbc.Connection) -> None:
     """)
 
 
-# ---------- RTH High ---------- #
+# ---------- RTH High/Low ---------- #
 def high_rth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
@@ -150,7 +203,7 @@ def high_rth(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD HighRTH VARCHAR(12)
+        ALTER TABLE PriceData ADD HighRTH FLOAT
     """)
 
     cursor.execute("""
@@ -170,7 +223,6 @@ def high_rth(db_connection: pyodbc.Connection) -> None:
     """)
 
 
-# ---------- RTH Low ---------- #
 def low_rth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
@@ -179,7 +231,7 @@ def low_rth(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD LowRTH VARCHAR(12)
+        ALTER TABLE PriceData ADD LowRTH FLOAT
     """)
 
     cursor.execute("""
@@ -231,7 +283,7 @@ def session_close(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD SessionClose VARCHAR(12)
+        ALTER TABLE PriceData ADD SessionClose FLOAT
     """)
     cursor.execute("""
         UPDATE pd
@@ -265,7 +317,7 @@ def prior_day_high(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD PriorDayHigh VARCHAR(12)
+        ALTER TABLE PriceData ADD PriorDayHigh FLOAT
     """)
 
     cursor.execute("""
@@ -292,7 +344,7 @@ def prior_day_low(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD PriorDayLow VARCHAR(12)
+        ALTER TABLE PriceData ADD PriorDayLow FLOAT
     """)
 
     cursor.execute("""
@@ -318,7 +370,7 @@ def prior_day_close(db_connection: pyodbc.Connection) -> None:
     """
     cursor = db_connection.cursor()
     cursor.execute("""
-        ALTER TABLE PriceData ADD PriorDayClose VARCHAR(12)
+        ALTER TABLE PriceData ADD PriorDayClose FLOAT
     """)
     cursor.execute("""
         UPDATE PriceData
