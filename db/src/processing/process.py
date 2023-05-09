@@ -44,15 +44,17 @@ def orh_eth(db_connection: pyodbc.Connection) -> None:
     SET pd.ORHETH = subq.HighPrice
     FROM PriceData pd
     JOIN (
-        SELECT Day, Month, Year, Symbol, HighPrice
+        SELECT Day, Month, Year, Symbol, HighPrice,
+            MIN(CASE WHEN SessionTime >= '02:00:00' THEN SessionTime END) AS MinTimeAfter
         FROM PriceData
-        WHERE SessionTime = '02:00:00'
+        GROUP BY Day, Month, Year, Symbol, HighPrice
     ) subq
     ON pd.Day = subq.Day
         AND pd.Month = subq.Month
         AND pd.Year = subq.Year
         AND pd.Symbol = subq.Symbol
-""")
+        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '02:00:00')
+    """)
 
 
 def orl_eth(db_connection: pyodbc.Connection) -> None:
@@ -71,22 +73,24 @@ def orl_eth(db_connection: pyodbc.Connection) -> None:
     SET pd.ORLETH = subq.LowPrice
     FROM PriceData pd
     JOIN (
-        SELECT Day, Month, Year, Symbol, LowPrice
+        SELECT Day, Month, Year, Symbol, LowPrice,
+            MIN(CASE WHEN SessionTime >= '02:00:00' THEN SessionTime END) AS MinTimeAfter
         FROM PriceData
-        WHERE SessionTime = '02:00:00'
+        GROUP BY Day, Month, Year, Symbol, LowPrice
     ) subq
     ON pd.Day = subq.Day
         AND pd.Month = subq.Month
         AND pd.Year = subq.Year
         AND pd.Symbol = subq.Symbol
-""")
+        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '02:00:00')
+    """)
     
 
 # ---------- RTH Opening Range ---------- #
 def orh_rth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
-    orh_eth(db_connection)
+    orh_rth(db_connection)
     """
     cursor = db_connection.cursor()
 
@@ -99,15 +103,18 @@ def orh_rth(db_connection: pyodbc.Connection) -> None:
     SET pd.ORHRTH = subq.HighPrice
     FROM PriceData pd
     JOIN (
-        SELECT Day, Month, Year, Symbol, HighPrice
+        SELECT Day, Month, Year, Symbol, HighPrice,
+            MIN(CASE WHEN SessionTime >= '08:30:00' THEN SessionTime END) AS MinTimeAfter
         FROM PriceData
-        WHERE SessionTime = '08:30:00'
+        GROUP BY Day, Month, Year, Symbol, HighPrice
     ) subq
     ON pd.Day = subq.Day
         AND pd.Month = subq.Month
         AND pd.Year = subq.Year
         AND pd.Symbol = subq.Symbol
-""")
+        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '08:30:00')
+    """)
+
 
 
 def orl_rth(db_connection: pyodbc.Connection) -> None:
@@ -127,6 +134,7 @@ def orl_rth(db_connection: pyodbc.Connection) -> None:
     FROM PriceData pd
     JOIN (
         SELECT Day, Month, Year, Symbol, LowPrice
+            MIN(CASE WHEN SessionTime >= '08:30:00' THEN SessionTime END) AS MinTimeAfter
         FROM PriceData
         WHERE SessionTime = '08:30:00'
     ) subq
@@ -134,6 +142,7 @@ def orl_rth(db_connection: pyodbc.Connection) -> None:
         AND pd.Month = subq.Month
         AND pd.Year = subq.Year
         AND pd.Symbol = subq.Symbol
+        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '08:30:00')
 """)
 
 
