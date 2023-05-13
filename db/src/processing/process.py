@@ -28,122 +28,89 @@ def separate_time_columns(db_connection: pyodbc.Connection) -> None:
 
 
 # ---------- ETH Opening Range ---------- #
-def orh_eth(db_connection: pyodbc.Connection) -> None:
+def or_eth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
-    orh_eth(db_connection)
+    or_eth(db_connection)
     """
     cursor = db_connection.cursor()
 
-    cursor.execute("""
-        ALTER TABLE PriceData ADD ORHETH FLOAT
-    """)
+    cursor.execute(
+        """ALTER TABLE PriceData
+        ADD ORHETH FLOAT, ORLETH FLOAT"""
+    )
 
     cursor.execute("""
-    UPDATE pd
-    SET pd.ORHETH = subq.HighPrice
-    FROM PriceData pd
-    JOIN (
-        SELECT Day, Month, Year, Symbol, HighPrice,
-            MIN(CASE WHEN SessionTime >= '02:00:00' THEN SessionTime END) AS MinTimeAfter
-        FROM PriceData
-        GROUP BY Day, Month, Year, Symbol, HighPrice
-    ) subq
-    ON pd.Day = subq.Day
-        AND pd.Month = subq.Month
+    UPDATE pd 
+    SET pd.ORHETH = subq.HighPrice, pd.ORLETH = subq.LowPrice 
+    FROM PriceData pd 
+    JOIN ( 
+        SELECT Symbol, Day, Month, Year, 
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN HighPrice END), 
+                     MAX(CASE WHEN SessionTime > '02:00:00' THEN HighPrice END)) AS HighPrice, 
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN LowPrice END), 
+                     MAX(CASE WHEN SessionTime > '02:00:00' THEN LowPrice END)) AS LowPrice 
+        FROM (
+            SELECT pd.*,
+                ROW_NUMBER() OVER (
+                    PARTITION BY Symbol, Day, Month, Year
+                    ORDER BY
+                        CASE WHEN SessionTime >= '02:00:00' THEN SessionTime END ASC,
+                        CASE WHEN SessionTime < '02:00:00' THEN SessionTime END DESC
+                ) AS rn
+            FROM PriceData pd
+        ) subq2
+        WHERE subq2.rn = 1
+        GROUP BY Symbol, Day, Month, Year
+    ) subq 
+    ON pd.Symbol = subq.Symbol 
+        AND pd.Day = subq.Day 
+        AND pd.Month = subq.Month 
         AND pd.Year = subq.Year
-        AND pd.Symbol = subq.Symbol
-        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '02:00:00')
     """)
 
-
-def orl_eth(db_connection: pyodbc.Connection) -> None:
-    """
-    Example Usage:
-    orl_eth(db_connection)
-    """
-    cursor = db_connection.cursor()
-
-    cursor.execute("""
-        ALTER TABLE PriceData ADD ORLETH FLOAT
-    """)
-
-    cursor.execute("""
-    UPDATE pd
-    SET pd.ORLETH = subq.LowPrice
-    FROM PriceData pd
-    JOIN (
-        SELECT Day, Month, Year, Symbol, LowPrice,
-            MIN(CASE WHEN SessionTime >= '02:00:00' THEN SessionTime END) AS MinTimeAfter
-        FROM PriceData
-        GROUP BY Day, Month, Year, Symbol, LowPrice
-    ) subq
-    ON pd.Day = subq.Day
-        AND pd.Month = subq.Month
-        AND pd.Year = subq.Year
-        AND pd.Symbol = subq.Symbol
-        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '02:00:00')
-    """)
-    
 
 # ---------- RTH Opening Range ---------- #
-def orh_rth(db_connection: pyodbc.Connection) -> None:
+def or_rth(db_connection: pyodbc.Connection) -> None:
     """
     Example Usage:
-    orh_rth(db_connection)
+    or_rth(db_connection)
     """
     cursor = db_connection.cursor()
 
-    cursor.execute("""
-        ALTER TABLE PriceData ADD ORHRTH FLOAT
-    """)
+    cursor.execute(
+        """ALTER TABLE PriceData
+        ADD ORHRTH FLOAT, ORLRTH FLOAT"""
+    )
 
     cursor.execute("""
-    UPDATE pd
-    SET pd.ORHRTH = subq.HighPrice
-    FROM PriceData pd
+    UPDATE pd 
+    SET pd.ORHRTH = subq.HighPrice, pd.ORLRTH = subq.LowPrice 
+    FROM PriceData pd 
     JOIN (
-        SELECT Day, Month, Year, Symbol, HighPrice,
-            MIN(CASE WHEN SessionTime >= '08:30:00' THEN SessionTime END) AS MinTimeAfter
-        FROM PriceData
-        GROUP BY Day, Month, Year, Symbol, HighPrice
-    ) subq
-    ON pd.Day = subq.Day
-        AND pd.Month = subq.Month
+        SELECT Day, Month, Year, Symbol, 
+            COALESCE(MAX(CASE WHEN SessionTime = '08:31:00' THEN HighPrice END), 
+                     MAX(CASE WHEN SessionTime > '08:31:00' THEN HighPrice END)) AS HighPrice, 
+            COALESCE(MAX(CASE WHEN SessionTime = '08:31:00' THEN LowPrice END), 
+                     MAX(CASE WHEN SessionTime > '08:31:00' THEN LowPrice END)) AS LowPrice 
+        FROM (
+            SELECT pd.*,
+                ROW_NUMBER() OVER (
+                    PARTITION BY Symbol, Day, Month, Year
+                    ORDER BY
+                        CASE WHEN SessionTime >= '08:31:00' THEN SessionTime END ASC,
+                        CASE WHEN SessionTime < '08:31:00' THEN SessionTime END DESC
+                ) AS rn
+            FROM PriceData pd
+        ) subq2
+        WHERE subq2.rn = 1
+        GROUP BY Day, Month, Year, Symbol
+    ) subq 
+    ON pd.Symbol = subq.Symbol 
+        AND pd.Day = subq.Day 
+        AND pd.Month = subq.Month 
         AND pd.Year = subq.Year
-        AND pd.Symbol = subq.Symbol
-        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '08:30:00')
     """)
-
-
-
-def orl_rth(db_connection: pyodbc.Connection) -> None:
-    """
-    Example Usage:
-    orl_eth(db_connection)
-    """
-    cursor = db_connection.cursor()
-
-    cursor.execute("""
-        ALTER TABLE PriceData ADD ORLRTH FLOAT
-    """)
-
-    cursor.execute("""
-    UPDATE pd
-    SET pd.ORLRTH = subq.LowPrice
-    FROM PriceData pd
-    JOIN (
-        SELECT Day, Month, Year, Symbol, LowPrice
-            MIN(CASE WHEN SessionTime >= '08:30:00' THEN SessionTime END) AS MinTimeAfter
-        FROM PriceData
-        WHERE SessionTime = '08:30:00'
-    ) subq
-    ON pd.Day = subq.Day
-        AND pd.Month = subq.Month
-        AND pd.Year = subq.Year
-        AND pd.Symbol = subq.Symbol
-        AND pd.SessionTime = COALESCE(subq.MinTimeAfter, '08:30:00')
-""")
 
 
 # ---------- ETH High/Low ---------- #
