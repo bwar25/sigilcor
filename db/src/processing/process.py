@@ -89,10 +89,10 @@ def or_rth(db_connection: pyodbc.Connection) -> None:
     FROM PriceData pd 
     JOIN (
         SELECT Day, Month, Year, Symbol, 
-            COALESCE(MAX(CASE WHEN SessionTime = '08:31:00' THEN HighPrice END), 
-                     MAX(CASE WHEN SessionTime > '08:31:00' THEN HighPrice END)) AS HighPrice, 
-            COALESCE(MAX(CASE WHEN SessionTime = '08:31:00' THEN LowPrice END), 
-                     MAX(CASE WHEN SessionTime > '08:31:00' THEN LowPrice END)) AS LowPrice 
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN HighPrice END), 
+                     MAX(CASE WHEN SessionTime > '02:00:00' THEN HighPrice END)) AS HighPrice, 
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN LowPrice END), 
+                     MAX(CASE WHEN SessionTime > '02:00:00' THEN LowPrice END)) AS LowPrice 
         FROM (
             SELECT pd.*,
                 ROW_NUMBER() OVER (
