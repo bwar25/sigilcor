@@ -54,3 +54,24 @@ FROM
 ORDER BY 
     q1.Symbol, 
     q1.Hour
+
+
+-- Percentage of SessionClose Above/Below PriorDayClose w/ Filter of ORRTH > ORETH
+
+SELECT 
+    p.Symbol, 
+    COUNT(CASE WHEN p.SessionClose > p.PriorDayClose AND p.ORHRTH > p.ORHETH AND p.ORLRTH > p.ORLETH THEN 1 END) AS AboveCount,
+    COUNT(CASE WHEN p.SessionClose < p.PriorDayClose AND p.ORHRTH > p.ORHETH AND p.ORLRTH > p.ORLETH THEN 1 END) AS BelowCount,
+    CONVERT(decimal(5,2), COUNT(CASE WHEN p.SessionClose > p.PriorDayClose AND p.ORHRTH > p.ORHETH AND p.ORLRTH > p.ORLETH THEN 1 END) * 100.0 / COUNT(*) ) AS AbovePct,
+    CONVERT(decimal(5,2), COUNT(CASE WHEN p.SessionClose < p.PriorDayClose AND p.ORHRTH > p.ORHETH AND p.ORLRTH > p.ORLETH THEN 1 END) * 100.0 / COUNT(*) ) AS BelowPct
+FROM 
+    PriceData p
+WHERE 
+    p.SessionClose IS NOT NULL AND 
+    p.PriorDayClose IS NOT NULL AND 
+    p.SessionTimeHigh >= '02:00:00' AND p.SessionTimeHigh <= '15:00:00' AND
+    p.ORHRTH > p.ORHETH AND p.ORLRTH > p.ORLETH
+GROUP BY 
+    p.Symbol
+ORDER BY 
+    p.Symbol
