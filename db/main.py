@@ -47,6 +47,7 @@ def processing_main():
         # prior_day_close(db_connection)
         # print("Successful: prior_day_close...")
         session_hl(db_connection)
+        print("Successful: session_hl...")
 
 
 if __name__ == '__main__':

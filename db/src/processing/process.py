@@ -322,84 +322,55 @@ def session_hl(db_connection: pyodbc.Connection) -> None:
     """
     cursor = db_connection.cursor()
 
-    query = """
-        SELECT 
-            pd1.Day, 
-            pd1.Month, 
-            pd1.Year, 
-            pd1.Symbol, 
-            pd1.SessionTime AS SessionHigh, 
-            pd1.HighPrice, 
-            pd2.SessionTime AS SessionLow, 
-            pd2.LowPrice
-        FROM 
-            (
-                SELECT 
-                    Day, 
-                    Month, 
-                    Year, 
-                    Symbol, 
-                    SessionTime, 
-                    HighPrice,
-                    LowPrice,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY Day, Month, Year, Symbol 
-                        ORDER BY HighPrice DESC
-                    ) AS HighPriceRank,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY Day, Month, Year, Symbol 
-                        ORDER BY LowPrice ASC
-                    ) AS LowPriceRank
-                FROM 
-                    PriceData
-                WHERE 
-                    SessionTime >= ? AND SessionTime <= ?
-            ) pd1
-            LEFT JOIN (
-                SELECT 
-                    Day, 
-                    Month, 
-                    Year, 
-                    Symbol, 
-                    SessionTime, 
-                    LowPrice,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY Day, Month, Year, Symbol 
-                        ORDER BY LowPrice ASC
-                    ) AS LowPriceRank
-                FROM 
-                    PriceData
-                WHERE 
-                    SessionTime >= ? AND SessionTime <= ?
-            ) pd2 ON pd1.Day = pd2.Day
-                    AND pd1.Month = pd2.Month
-                    AND pd1.Year = pd2.Year
-                    AND pd1.Symbol = pd2.Symbol
-                    AND pd2.LowPriceRank = 1
-        WHERE 
-            pd1.HighPriceRank = 1
-        ORDER BY 
-            Year, 
-            Month, 
-            Day, 
-            Symbol
-    """
-    params = ['02:00:00', '15:00:00', '02:00:00', '15:00:00']
-    cursor.execute(query, params)
-    
-    rows = cursor.fetchall()
-    
-    update_query = """
+    cursor.execute("""
+        ALTER TABLE PriceData 
+        ADD SessionTimeHigh TIME(0), 
+            SessionHighPrice FLOAT, 
+            SessionTimeLow TIME(0), 
+            SessionLowPrice FLOAT
+    """)
+
+    cursor.execute("""
+        WITH RankedData AS (
+            SELECT 
+                Day, 
+                Month, 
+                Year, 
+                Symbol, 
+                SessionTime, 
+                HighPrice, 
+                LowPrice, 
+                ROW_NUMBER() OVER (
+                    PARTITION BY Day, Month, Year, Symbol 
+                    ORDER BY HighPrice DESC
+                ) AS HighPriceRank, 
+                ROW_NUMBER() OVER (
+                    PARTITION BY Day, Month, Year, Symbol 
+                    ORDER BY LowPrice ASC
+                ) AS LowPriceRank
+            FROM 
+                PriceData
+            WHERE 
+                SessionTime >= ? AND SessionTime <= ?
+        )
         UPDATE PriceData 
-        SET SessionTimeHigh=?, SessionHighPrice=?, SessionTimeLow=?, SessionLowPrice=? 
-        WHERE Day=? AND Month=? AND Year=? AND Symbol=?
-    """
-    batch_size = 1000
-    updates = []
-    for i, row in enumerate(rows):
-        day, month, year, symbol, session_high, high_price, session_low, low_price = row
-        updates.append((session_high, high_price, session_low, low_price, day, month, year, symbol))
-        if len(updates) == batch_size or i == len(rows) - 1:
-            cursor.executemany(update_query, updates)
-            db_connection.commit()
-            updates = []
+        SET 
+            SessionTimeHigh = RankedData.SessionTime, 
+            SessionHighPrice = RankedData.HighPrice, 
+            SessionTimeLow = LowData.SessionTime, 
+            SessionLowPrice = LowData.LowPrice
+        FROM 
+            RankedData 
+            LEFT JOIN RankedData LowData ON 
+                RankedData.Day = LowData.Day AND 
+                RankedData.Month = LowData.Month AND 
+                RankedData.Year = LowData.Year AND 
+                RankedData.Symbol = LowData.Symbol AND 
+                LowData.LowPriceRank = 1
+        WHERE 
+            RankedData.HighPriceRank = 1 AND 
+            PriceData.Day = RankedData.Day AND 
+            PriceData.Month = RankedData.Month AND 
+            PriceData.Year = RankedData.Year AND 
+            PriceData.Symbol = RankedData.Symbol
+    """, ('02:00:00', '15:00:00'))
