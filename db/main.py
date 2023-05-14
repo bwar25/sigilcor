@@ -6,11 +6,11 @@ from src.processing.process import (
     separate_time_columns, 
     or_eth, 
     or_rth,
-    high_eth, low_eth, 
-    high_rth, low_rth, 
+    high_eth, low_eth,
     eliminate_holidays, 
     session_close,
-    prior_day_high, prior_day_low, prior_day_close)
+    prior_day_high, prior_day_low, prior_day_close,
+    session_hl)
 
 from src.pricedata.csv_files import csv_filepaths
 
@@ -28,32 +28,27 @@ def database_main():
 def processing_main():
     with connect_to_db() as db_connection:
         print("Successful: connection...")
-        separate_time_columns(db_connection)
-        print("Successful: separate_time_columns...")
-        or_eth(db_connection)
-        print("Successful: or_eth...")
-        or_rth(db_connection)
-        print("Successful: or_rth...")
-        high_eth(db_connection)
-        print("Successful: high_eth...")
-        low_eth(db_connection)
-        print("Successful: low_eth...")
-        high_rth(db_connection)
-        print("Successful: high_rth...")
-        low_rth(db_connection)
-        print("Successful: low_rth...")
-        eliminate_holidays(db_connection)
-        print("Successful: holidays...")
-        session_close(db_connection)
-        print("Successful: session_close...")
-        prior_day_high(db_connection)
-        print("Successful: prior_day_high...")
-        prior_day_low(db_connection)
-        print("Successful: prior_day_low...")
-        prior_day_close(db_connection)
-        print("Successful: prior_day_close...")
+        # separate_time_columns(db_connection)
+        # print("Successful: separate_time_columns...")
+        # or_eth(db_connection)
+        # print("Successful: or_eth...")
+        # or_rth(db_connection)
+        # print("Successful: or_rth...")
+        # high_eth(db_connection)
+        # low_eth(db_connection)
+        # print("Successful: eth (high & low)...")
+        # eliminate_holidays(db_connection)
+        # print("Successful: holidays...")
+        # session_close(db_connection)
+        # print("Successful: session_close...")
+        # prior_day_high(db_connection)
+        # prior_day_low(db_connection)
+        # print("Successful: prior_day (high & low)...")
+        # prior_day_close(db_connection)
+        # print("Successful: prior_day_close...")
+        session_hl(db_connection)
 
 
-# if __name__ == '__main__':
-#     database_main()
-#     processing_main()
+if __name__ == '__main__':
+    # database_main()
+    processing_main()

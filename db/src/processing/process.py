@@ -122,7 +122,8 @@ def high_eth(db_connection: pyodbc.Connection) -> None:
     cursor = db_connection.cursor()
 
     cursor.execute("""
-        ALTER TABLE PriceData ADD HighETH FLOAT
+        ALTER TABLE PriceData 
+        ADD HighETH FLOAT
     """)
 
     cursor.execute("""
@@ -132,7 +133,7 @@ def high_eth(db_connection: pyodbc.Connection) -> None:
     JOIN (
         SELECT Day, Month, Year, Symbol, MAX(HighPrice) AS HighPrice
         FROM PriceData
-        WHERE SessionTime >= '02:00:00' AND SessionTime <= '08:30:00'
+        WHERE SessionTime >= '02:00:00' AND SessionTime <= '15:00:00'
         GROUP BY Day, Month, Year, Symbol
     ) subq
     ON pd.Day = subq.Day
@@ -160,64 +161,7 @@ def low_eth(db_connection: pyodbc.Connection) -> None:
     JOIN (
         SELECT Day, Month, Year, Symbol, MIN(LowPrice) AS LowPrice
         FROM PriceData
-        WHERE SessionTime >= '02:00:00' AND SessionTime <= '08:30:00'
-        GROUP BY Day, Month, Year, Symbol
-    ) subq
-    ON pd.Day = subq.Day
-        AND pd.Month = subq.Month
-        AND pd.Year = subq.Year
-        AND pd.Symbol = subq.Symbol
-    """)
-
-
-# ---------- RTH High/Low ---------- #
-def high_rth(db_connection: pyodbc.Connection) -> None:
-    """
-    Example Usage:
-    high_rth(db_connection)
-    """
-    cursor = db_connection.cursor()
-
-    cursor.execute("""
-        ALTER TABLE PriceData ADD HighRTH FLOAT
-    """)
-
-    cursor.execute("""
-    UPDATE pd
-    SET pd.HighRTH = subq.HighPrice
-    FROM PriceData pd
-    JOIN (
-        SELECT Day, Month, Year, Symbol, MAX(HighPrice) AS HighPrice
-        FROM PriceData
-        WHERE SessionTime >= '08:30:00' AND SessionTime <= '15:00:00'
-        GROUP BY Day, Month, Year, Symbol
-    ) subq
-    ON pd.Day = subq.Day
-        AND pd.Month = subq.Month
-        AND pd.Year = subq.Year
-        AND pd.Symbol = subq.Symbol
-    """)
-
-
-def low_rth(db_connection: pyodbc.Connection) -> None:
-    """
-    Example Usage:
-    low_rth(db_connection)
-    """
-    cursor = db_connection.cursor()
-
-    cursor.execute("""
-        ALTER TABLE PriceData ADD LowRTH FLOAT
-    """)
-
-    cursor.execute("""
-    UPDATE pd
-    SET pd.LowRTH = subq.LowPrice
-    FROM PriceData pd
-    JOIN (
-        SELECT Day, Month, Year, Symbol, MIN(LowPrice) AS LowPrice
-        FROM PriceData
-        WHERE SessionTime >= '08:30:00' AND SessionTime <= '15:00:00'
+        WHERE SessionTime >= '02:00:00' AND SessionTime <= '15:00:00'
         GROUP BY Day, Month, Year, Symbol
     ) subq
     ON pd.Day = subq.Day
@@ -261,26 +205,31 @@ def session_close(db_connection: pyodbc.Connection) -> None:
     cursor.execute("""
         ALTER TABLE PriceData ADD SessionClose FLOAT
     """)
+
     cursor.execute("""
-        UPDATE pd
-        SET pd.SessionClose = (
-            SELECT subq.ClosePrice
-            FROM PriceData subq
-            WHERE subq.Day = pd.Day
-                AND subq.Month = pd.Month
-                AND subq.Year = pd.Year
-                AND subq.Symbol = pd.Symbol
-                AND subq.SessionTime = (
-                    SELECT MAX(SessionTime)
-                    FROM PriceData subq2
-                    WHERE subq2.Day = pd.Day
-                        AND subq2.Month = pd.Month
-                        AND subq2.Year = pd.Year
-                        AND subq2.Symbol = pd.Symbol
-                        AND subq2.SessionTime <= '15:00:00'
-                )
+        WITH max_session_times AS (
+            SELECT Symbol, Day, Month, Year, MAX(SessionTime) AS MaxSessionTime
+            FROM PriceData
+            WHERE SessionTime <= '15:00:00'
+            GROUP BY Symbol, Day, Month, Year
         )
-        FROM PriceData pd;
+        UPDATE pd
+        SET pd.SessionClose = subq.ClosePrice
+        FROM PriceData pd
+        JOIN (
+            SELECT p.Symbol, p.Day, p.Month, p.Year, p.ClosePrice
+            FROM PriceData p
+            JOIN max_session_times mst
+            ON p.Symbol = mst.Symbol
+            AND p.Day = mst.Day
+            AND p.Month = mst.Month
+            AND p.Year = mst.Year
+            AND p.SessionTime = mst.MaxSessionTime
+        ) AS subq
+        ON pd.Symbol = subq.Symbol
+        AND pd.Day = subq.Day
+        AND pd.Month = subq.Month
+        AND pd.Year = subq.Year
     """)
 
 
@@ -300,10 +249,10 @@ def prior_day_high(db_connection: pyodbc.Connection) -> None:
         UPDATE PriceData
         SET PriorDayHigh = subquery.PriorDayHigh
         FROM (
-            SELECT Symbol, Day, Month, Year, HighRTH,
-                   LAG(HighRTH) OVER (PARTITION BY Symbol ORDER BY Year, Month, Day) AS PriorDayHigh
+            SELECT Symbol, Day, Month, Year, HighETH,
+                   LAG(HighETH) OVER (PARTITION BY Symbol ORDER BY Year, Month, Day) AS PriorDayHigh
             FROM PriceData
-            GROUP BY Symbol, Day, Month, Year, HighRTH
+            GROUP BY Symbol, Day, Month, Year, HighETH
         ) AS subquery
         WHERE PriceData.Symbol = subquery.Symbol
         AND PriceData.Day = subquery.Day
@@ -327,10 +276,10 @@ def prior_day_low(db_connection: pyodbc.Connection) -> None:
         UPDATE PriceData
         SET PriorDayLow = subquery.PriorDayLow
         FROM (
-            SELECT Symbol, Day, Month, Year, LowRTH,
-                   LAG(LowRTH) OVER (PARTITION BY Symbol ORDER BY Year, Month, Day) AS PriorDayLow
+            SELECT Symbol, Day, Month, Year, LowETH,
+                   LAG(LowETH) OVER (PARTITION BY Symbol ORDER BY Year, Month, Day) AS PriorDayLow
             FROM PriceData
-            GROUP BY Symbol, Day, Month, Year, LowRTH
+            GROUP BY Symbol, Day, Month, Year, LowETH
         ) AS subquery
         WHERE PriceData.Symbol = subquery.Symbol
         AND PriceData.Day = subquery.Day
@@ -363,4 +312,94 @@ def prior_day_close(db_connection: pyodbc.Connection) -> None:
         AND PriceData.Month = subquery.Month
         AND PriceData.Year = subquery.Year
     """)
-    db_connection.commit()
+
+
+# ---------- Time of Session High/Low ---------- #
+def session_hl(db_connection: pyodbc.Connection) -> None:
+    """
+    Example Usage:
+    session_hl(db_connection)
+    """
+    cursor = db_connection.cursor()
+
+    query = """
+        SELECT 
+            pd1.Day, 
+            pd1.Month, 
+            pd1.Year, 
+            pd1.Symbol, 
+            pd1.SessionTime AS SessionHigh, 
+            pd1.HighPrice, 
+            pd2.SessionTime AS SessionLow, 
+            pd2.LowPrice
+        FROM 
+            (
+                SELECT 
+                    Day, 
+                    Month, 
+                    Year, 
+                    Symbol, 
+                    SessionTime, 
+                    HighPrice,
+                    LowPrice,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY Day, Month, Year, Symbol 
+                        ORDER BY HighPrice DESC
+                    ) AS HighPriceRank,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY Day, Month, Year, Symbol 
+                        ORDER BY LowPrice ASC
+                    ) AS LowPriceRank
+                FROM 
+                    PriceData
+                WHERE 
+                    SessionTime >= ? AND SessionTime <= ?
+            ) pd1
+            LEFT JOIN (
+                SELECT 
+                    Day, 
+                    Month, 
+                    Year, 
+                    Symbol, 
+                    SessionTime, 
+                    LowPrice,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY Day, Month, Year, Symbol 
+                        ORDER BY LowPrice ASC
+                    ) AS LowPriceRank
+                FROM 
+                    PriceData
+                WHERE 
+                    SessionTime >= ? AND SessionTime <= ?
+            ) pd2 ON pd1.Day = pd2.Day
+                    AND pd1.Month = pd2.Month
+                    AND pd1.Year = pd2.Year
+                    AND pd1.Symbol = pd2.Symbol
+                    AND pd2.LowPriceRank = 1
+        WHERE 
+            pd1.HighPriceRank = 1
+        ORDER BY 
+            Year, 
+            Month, 
+            Day, 
+            Symbol
+    """
+    params = ['02:00:00', '15:00:00', '02:00:00', '15:00:00']
+    cursor.execute(query, params)
+    
+    rows = cursor.fetchall()
+    
+    update_query = """
+        UPDATE PriceData 
+        SET SessionTimeHigh=?, SessionHighPrice=?, SessionTimeLow=?, SessionLowPrice=? 
+        WHERE Day=? AND Month=? AND Year=? AND Symbol=?
+    """
+    batch_size = 1000
+    updates = []
+    for i, row in enumerate(rows):
+        day, month, year, symbol, session_high, high_price, session_low, low_price = row
+        updates.append((session_high, high_price, session_low, low_price, day, month, year, symbol))
+        if len(updates) == batch_size or i == len(rows) - 1:
+            cursor.executemany(update_query, updates)
+            db_connection.commit()
+            updates = []
