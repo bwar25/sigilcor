@@ -50,5 +50,5 @@ def processing_main():
 
 
 if __name__ == '__main__':
-    database_main()
+    # database_main()
     processing_main()

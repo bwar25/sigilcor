@@ -91,10 +91,10 @@ def or_rth(db_connection: pyodbc.Connection) -> None:
     cursor.execute("""
     UPDATE pd 
     SET pd.ORHRTH = subq.HighPrice, pd.ORLRTH = subq.LowPrice,
-        pd.ORCRTH = subq.OpenPrice, pd.ORORTH = subq.ClosePrice
+        pd.ORORTH = subq.OpenPrice, pd.ORCRTH = subq.ClosePrice
     FROM PriceData pd 
-    JOIN (
-        SELECT Day, Month, Year, Symbol, 
+    JOIN ( 
+        SELECT Symbol, Day, Month, Year, 
             COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN HighPrice END), 
                      MAX(CASE WHEN SessionTime > '02:00:00' THEN HighPrice END)) AS HighPrice, 
             COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN LowPrice END), 
@@ -114,7 +114,7 @@ def or_rth(db_connection: pyodbc.Connection) -> None:
             FROM PriceData pd
         ) subq2
         WHERE subq2.rn = 1
-        GROUP BY Day, Month, Year, Symbol
+        GROUP BY Symbol, Day, Month, Year
     ) subq 
     ON pd.Symbol = subq.Symbol 
         AND pd.Day = subq.Day 
