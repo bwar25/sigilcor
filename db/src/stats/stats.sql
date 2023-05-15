@@ -75,3 +75,27 @@ GROUP BY
     p.Symbol
 ORDER BY 
     p.Symbol
+
+
+-- Total Difference & Cumulative Difference of ...
+
+WITH subq AS (
+    SELECT p.Symbol, 
+           MIN(p.SessionTime) AS FirstSessionTime, 
+           p.Day, 
+           p.Month, 
+           p.Year, 
+           p.SessionClose,
+           p.ORHRTH,
+           (p.SessionClose - p.ORHRTH) AS TotalDifference
+    FROM PriceData p
+    WHERE p.Symbol = 'ES'
+    GROUP BY p.Symbol, p.Day, p.Month, p.Year, p.SessionClose, p.ORHRTH
+), subq2 AS (
+    SELECT Symbol, FirstSessionTime, Day, Month, Year, SessionClose, ORHRTH, TotalDifference,
+           SUM(TotalDifference) OVER (ORDER BY Symbol, Year, Month, Day, SessionClose, ORHRTH) AS CumulativeDifference
+    FROM subq
+)
+SELECT Symbol, FirstSessionTime, Day, Month, Year, SessionClose, ORHRTH, TotalDifference, CumulativeDifference
+FROM subq2
+ORDER BY Symbol, Year, Month, Day, SessionClose, ORHRTH;

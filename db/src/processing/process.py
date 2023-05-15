@@ -374,3 +374,6 @@ def session_hl(db_connection: pyodbc.Connection) -> None:
             PriceData.Year = RankedData.Year AND 
             PriceData.Symbol = RankedData.Symbol
     """, ('02:00:00', '15:00:00'))
+
+
+# ORO/ORC ETH/RTH
