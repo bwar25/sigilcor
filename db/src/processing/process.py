@@ -37,19 +37,24 @@ def or_eth(db_connection: pyodbc.Connection) -> None:
 
     cursor.execute(
         """ALTER TABLE PriceData
-        ADD ORHETH FLOAT, ORLETH FLOAT"""
+        ADD ORHETH FLOAT, ORLETH FLOAT, OROETH FLOAT, ORCETH FLOAT"""
     )
 
     cursor.execute("""
     UPDATE pd 
-    SET pd.ORHETH = subq.HighPrice, pd.ORLETH = subq.LowPrice 
+    SET pd.ORHETH = subq.HighPrice, pd.ORLETH = subq.LowPrice,
+        pd.OROETH = subq.OpenPrice, pd.ORCETH = subq.ClosePrice
     FROM PriceData pd 
     JOIN ( 
         SELECT Symbol, Day, Month, Year, 
             COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN HighPrice END), 
                      MAX(CASE WHEN SessionTime > '02:00:00' THEN HighPrice END)) AS HighPrice, 
             COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN LowPrice END), 
-                     MAX(CASE WHEN SessionTime > '02:00:00' THEN LowPrice END)) AS LowPrice 
+                     MAX(CASE WHEN SessionTime > '02:00:00' THEN LowPrice END)) AS LowPrice,
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN OpenPrice END),
+                     MAX(CASE WHEN SessionTime < '02:00:00' THEN OpenPrice END)) AS OpenPrice,
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN ClosePrice END),
+                     MAX(CASE WHEN SessionTime < '02:00:00' THEN ClosePrice END)) AS ClosePrice
         FROM (
             SELECT pd.*,
                 ROW_NUMBER() OVER (
@@ -80,19 +85,24 @@ def or_rth(db_connection: pyodbc.Connection) -> None:
 
     cursor.execute(
         """ALTER TABLE PriceData
-        ADD ORHRTH FLOAT, ORLRTH FLOAT"""
+        ADD ORHRTH FLOAT, ORLRTH FLOAT, OROORTH FLOAT, ORCRTH FLOAT"""
     )
 
     cursor.execute("""
     UPDATE pd 
-    SET pd.ORHRTH = subq.HighPrice, pd.ORLRTH = subq.LowPrice 
+    SET pd.ORHRTH = subq.HighPrice, pd.ORLRTH = subq.LowPrice,
+        pd.OROORTH = subq.OpenPrice, pd.ORCRTH = subq.ClosePrice
     FROM PriceData pd 
     JOIN (
         SELECT Day, Month, Year, Symbol, 
             COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN HighPrice END), 
                      MAX(CASE WHEN SessionTime > '02:00:00' THEN HighPrice END)) AS HighPrice, 
             COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN LowPrice END), 
-                     MAX(CASE WHEN SessionTime > '02:00:00' THEN LowPrice END)) AS LowPrice 
+                     MAX(CASE WHEN SessionTime > '02:00:00' THEN LowPrice END)) AS LowPrice,
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN OpenPrice END),
+                     MAX(CASE WHEN SessionTime < '02:00:00' THEN OpenPrice END)) AS OpenPrice,
+            COALESCE(MAX(CASE WHEN SessionTime = '02:00:00' THEN ClosePrice END),
+                     MAX(CASE WHEN SessionTime < '02:00:00' THEN ClosePrice END)) AS ClosePrice
         FROM (
             SELECT pd.*,
                 ROW_NUMBER() OVER (
@@ -374,6 +384,3 @@ def session_hl(db_connection: pyodbc.Connection) -> None:
             PriceData.Year = RankedData.Year AND 
             PriceData.Symbol = RankedData.Symbol
     """, ('02:00:00', '15:00:00'))
-
-
-# ORO/ORC ETH/RTH
