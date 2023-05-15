@@ -85,13 +85,13 @@ def or_rth(db_connection: pyodbc.Connection) -> None:
 
     cursor.execute(
         """ALTER TABLE PriceData
-        ADD ORHRTH FLOAT, ORLRTH FLOAT, OROORTH FLOAT, ORCRTH FLOAT"""
+        ADD ORHRTH FLOAT, ORLRTH FLOAT, ORORTH FLOAT, ORCRTH FLOAT"""
     )
 
     cursor.execute("""
     UPDATE pd 
     SET pd.ORHRTH = subq.HighPrice, pd.ORLRTH = subq.LowPrice,
-        pd.OROORTH = subq.OpenPrice, pd.ORCRTH = subq.ClosePrice
+        pd.ORCRTH = subq.OpenPrice, pd.ORORTH = subq.ClosePrice
     FROM PriceData pd 
     JOIN (
         SELECT Day, Month, Year, Symbol, 
